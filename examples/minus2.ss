@@ -1,15 +1,23 @@
 #lang racket
 (require "./chains.ss")
   
-(define G1
-'((E -> ((E - T) (T * F) (a) (M a)))
-  (T -> ((T * F) (a) (M a)))
-  (F -> ((a) (M a)))
-  (M -> ((-) (M -)))))
+(define G1 (build-grammar
+            '((E -> ((E - T) (T * F) (a) (M a)))
+              (T -> ((T * F) (a) (M a)))
+              (F -> ((a) (M a)))
+              (M -> ((-) (M -))))
+            '(E T F M)))
 
 
-(chains (build-grammar G1 '(E T F M))  
-        'E    ; axiom
-        2     ; context size 
-        100)  ; number of steps
 
+(define grammchains (grammatical-chains G1 'E 2 16))
+
+
+(display-list-of-strings
+ (set-of-sfs->list-of-strings
+  grammchains
+  ))
+
+(show-conflicts
+          (find-conflicts grammchains
+                (chains-as-set (chains G1 'E 2 100))))
