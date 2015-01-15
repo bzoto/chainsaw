@@ -94,7 +94,7 @@
                 xs)))))
 
 (define (border k)
-  (for/list ((x (in-range k))) '$))
+  (for/list ((x (in-range k))) '|#|))
 
 
 (define (get-contexts G axiom k steps)
