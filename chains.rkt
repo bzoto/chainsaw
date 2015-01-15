@@ -340,13 +340,13 @@
             cf))
 
 (define (find-conflicts the-chains simple-chains)
-  (filter 
-   pair?
-   (for*/list ((c (set->list the-chains))
-               (s (set->list simple-chains)))
-     (match-let* (((list x y z) s)
-                  (confl (conflictual c x y z 2)))
-       (if (not (null? confl))
-           (list (list x y z) c)
-           '())))))
+  (let ((out '()))
+    (for* ((c (set->list the-chains))
+           (s (set->list simple-chains)))
+      (match-let* (((list x y z) s)
+                   (confl (conflictual c x y z 2)))
+                  (when (pair? confl)
+                    (set! out (cons (list (list x y z) c)
+                                    out)))))
+    out))
 

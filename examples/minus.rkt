@@ -9,7 +9,7 @@
 
 
 
-(define grammchains (grammatical-chains G1 'E 2 16))
+(define grammchains (grammatical-chains G1 'E 3 20))
 
 
 (display-list-of-strings
@@ -19,4 +19,4 @@
 
 (show-conflicts
           (find-conflicts grammchains
-                (chains-as-set (chains G1 'E 2 100))))
+                (chains-as-set (chains G1 'E 3 100))))
