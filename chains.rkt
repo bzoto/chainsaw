@@ -327,7 +327,7 @@
       (match-let* (((list x y z) s)
                    (confl (conflictual c x y z h)))
                   (when (pair? confl)
-                    (set! out (cons (list (list x y z) c)
+                    (set! out (cons (list s c)
                                     out)))))
     out))
 
