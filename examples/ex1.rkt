@@ -21,4 +21,4 @@
 
 (show-conflicts
  (find-conflicts grammchains
-                 (chains-as-set (chains G1 'S 2 100))))
+                 (chains-as-set (chains G1 'S 2 100)) 2))

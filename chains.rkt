@@ -265,13 +265,6 @@
         '()
         (take l1 k))))
 
-(define (is-bracketed?-strange lst y)
-  (let ((ll (drop-brackets lst)))
-    (and (equal? y ll)
-         (equal? y (take (member (car y) lst) (length y)))
-         (member (car lst) '(|[| |]|))
-         (member (last lst) '(|[| |]|)))))
-
 (define (is-bracketed? lst y)
   (let loop ((cur   lst)
              (the-y y)
@@ -292,10 +285,6 @@
        (loop (cdr cur) (cdr the-y) 1))
       (else #f))))
 
-(define-syntax ==> ; logical implication
-  (syntax-rules ()
-    ((_ x y) (or (not x) y))))
-
 
 (define (conflictual c x y z h)
   "c is a chain, x[y]z is a simple chain"
@@ -310,17 +299,9 @@
           (not (is-bracketed? Y y))
           (not (member (last X) '(|[| |]|)))
           (not (member (car Z)  '(|[| |]|)))
-          ;(==> (eq? '|[| (last X))
-          ;     (not (eq? '|]| (car Z))))
-          ;(==> (eq? '|]| (car Z))
-          ;     (not (eq? '|]| (last X))))
           )))   
      cc)))
 
-;(conflictual '($ $ a |[| |[| |[| c d e |]| f |[| e |]| |]| f |]| $ $)
-;             '(a c)
-;             '(d)
-;             '(e f)  2)
 
 (define (show-conflicts cf)
   (displayln "Conflicts:")
@@ -339,12 +320,12 @@
                 ))
             cf))
 
-(define (find-conflicts the-chains simple-chains)
+(define (find-conflicts the-chains simple-chains h)
   (let ((out '()))
     (for* ((c (set->list the-chains))
            (s (set->list simple-chains)))
       (match-let* (((list x y z) s)
-                   (confl (conflictual c x y z 2)))
+                   (confl (conflictual c x y z h)))
                   (when (pair? confl)
                     (set! out (cons (list (list x y z) c)
                                     out)))))

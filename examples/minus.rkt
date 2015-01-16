@@ -19,4 +19,5 @@
 
 (show-conflicts
           (find-conflicts grammchains
-                (chains-as-set (chains G1 'E 3 100))))
+                          (chains-as-set (chains G1 'E 3 100))
+                          3))
