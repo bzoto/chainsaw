@@ -13,10 +13,7 @@
 (define grammchains (grammatical-chains G1 'E 3 20))
 
 
-(display-list-of-strings
- (set-of-sfs->list-of-strings
-  grammchains
-  ))
+(show-chains grammchains)
 
 (show-conflicts
           (find-conflicts grammchains

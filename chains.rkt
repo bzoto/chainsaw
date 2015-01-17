@@ -10,8 +10,7 @@
  build-grammar
  grammatical-chains
  chains-as-set
- set-of-sfs->list-of-strings
- display-list-of-strings
+ show-chains
  find-conflicts
  show-conflicts
  )
@@ -218,20 +217,13 @@
                       xs
                       (set-union out newchains))))))))
 
-(define (set-of-sfs->list-of-strings the-set)
-  (set-map the-set
-           (lambda (s)
-             (apply string-append 
-                    (map symbol->string s)))))
+(define (show-chains the-set)
+  (set-for-each the-set
+                (lambda (s)
+                  (displayln (apply string-append 
+                                    (map symbol->string s))))))
 
-(define (display-list-of-strings L)
-  (let ((c 1))
-    (for-each (lambda (x)
-                (display c) 
-                (set! c (+ 1 c))
-                (display ") ")
-                (displayln x))
-              L)))
+
 
 (define (3-factors lst)
   (let ((out '())
