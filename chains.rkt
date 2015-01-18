@@ -201,21 +201,39 @@
                     (car sfs)
                     out)
               (match-let* 
-                  (((cons x xs) right)
-                   (newstuff (if (nonterm? x)
-                                 (set-map
-                                  (hash-ref G x)
-                                  (lambda (n)
-                                    (append left (list '|[|) n (list '|]|) xs)))
-                                 (set)))
-                   (newchains (list->set 
-                               (set-map newstuff drop-nt))))
-                (loop (append sfs
-                              (filter (lambda (t) (<= (length t) maxlen))
-                                      (set->list newstuff)))
-                      (append left (list x))
-                      xs
-                      (set-union out newchains))))))))
+               (((cons x xs) right))
+
+               (if (nonterm? x)
+                   (let-values (((newstuff newchains)
+                                 (newstuff+newchains left (hash-ref G x)
+                                                     x xs maxlen)))
+                     (loop (append sfs newstuff)
+                           (append left (list x))
+                           xs
+                           (set-union out newchains)))
+                   (loop sfs
+                         (append left (list x))
+                         xs
+                         out))))))))
+
+(define (newstuff+newchains left right-parts x xs maxlen)
+  (let ((newchains (mutable-set)))
+    (let loop ((ns right-parts)
+               (newstuff '()))
+      (if (null? ns)
+          (values newstuff newchains)
+          
+          (let ((newchain  (append left
+                                   (list '|[|)
+                                   (car ns)
+                                   (list '|]|) xs)))
+            (set-add! newchains (drop-nt newchain))
+            (loop (cdr ns)
+                  (if (<= (length newchain)
+                          maxlen)
+                      (cons newchain newstuff)
+                      newstuff)))))))
+    
 
 (define (show-chains the-set)
   (set-for-each the-set
@@ -312,14 +330,18 @@
                 ))
             cf))
 
+
 (define (find-conflicts the-chains simple-chains h)
   (let ((out '()))
-    (for* ((c (set->list the-chains))
-           (s (set->list simple-chains)))
-      (match-let* (((list x y z) s)
-                   (confl (conflictual c x y z h)))
-                  (when (pair? confl)
-                    (set! out (cons (list s c)
-                                    out)))))
+    (set-for-each
+     the-chains
+     (lambda (c)
+       (set-for-each
+        simple-chains
+        (lambda (s)
+          (match-let* (((list x y z) s)
+                       (confl (conflictual c x y z h)))
+                      (when (pair? confl)
+                        (set! out (cons (list s c)
+                                        out))))))))
     out))
-
