@@ -8,12 +8,17 @@
 (provide 
  chains 
  build-grammar
- grammatical-chains
+ grammatical-chains-conflicts
  chains-as-set
  show-chains
- find-conflicts
- show-conflicts
  )
+
+(struct nonterm (symb) ;; data structure for nonterminals
+        #:transparent) ;; for equality
+
+(define (terminal-sf? sf)
+  (andmap (lambda (s)
+            (not (nonterm? s))) sf))
 
 ;; --- interface ---
 
@@ -36,14 +41,6 @@
 
 
 ;; --- the code ---
-
-(struct nonterm (symb) ;; data structure for nonterminals
-  #:transparent)       ;; for equality
-
-
-(define (terminal-sf? sf)
-  (andmap (lambda (s)
-            (not (nonterm? s))) sf))
 
 (define (before-k lst i k)
   (for/list ([x (in-range (- i k) i)])
@@ -184,55 +181,64 @@
     out))
 
 
+(define (grammatical-chains-conflicts G axiom h maxlen simple-chains)
+  (displayln "Conflict:")
+  (call/ec
+   (lambda (exit)
+     (let ((bord (border h)))
+       (let loop ((sfs  '())
+                  (left '())
+                  (right (append bord (list (nonterm axiom)) bord))
+                  )
+         (if (and (null? sfs)
+                  (null? right))
+             #f
+             (if (null? right)
+                 (loop (cdr sfs)
+                       '()
+                       (car sfs)
+                       )
+                 (match-let* 
+                  (((cons x xs) right))
 
+                  (if (nonterm? x)
+                      (let ((newstuff
+                             (newstuff+newchains left (hash-ref G x)
+                                                 x xs h
+                                                 maxlen simple-chains exit)))
+                        (loop (append sfs newstuff)
+                              (append left (list x))
+                              xs
+                              ))
+                      (loop sfs
+                            (append left (list x))
+                            xs
+                            ))))))))))
 
-(define (grammatical-chains G axiom k maxlen)
-  (let ((bord (border k)))
-    (let loop ((sfs  '())
-               (left '())
-               (right (append bord (list (nonterm axiom)) bord))
-               (out (set)))
-      (if (and (null? sfs)
-               (null? right))
-          out
-          (if (null? right)
-              (loop (cdr sfs)
-                    '()
-                    (car sfs)
-                    out)
-              (match-let* 
-               (((cons x xs) right))
-
-               (if (nonterm? x)
-                   (let-values (((newstuff newchains)
-                                 (newstuff+newchains left (hash-ref G x)
-                                                     x xs maxlen)))
-                     (loop (append sfs newstuff)
-                           (append left (list x))
-                           xs
-                           (set-union out newchains)))
-                   (loop sfs
-                         (append left (list x))
-                         xs
-                         out))))))))
-
-(define (newstuff+newchains left right-parts x xs maxlen)
-  (let ((newchains (mutable-set)))
-    (let loop ((ns right-parts)
-               (newstuff '()))
-      (if (null? ns)
-          (values newstuff newchains)
-          
-          (let ((newchain  (append left
-                                   (list '|[|)
-                                   (car ns)
-                                   (list '|]|) xs)))
-            (set-add! newchains (drop-nt newchain))
-            (loop (cdr ns)
-                  (if (<= (length newchain)
-                          maxlen)
-                      (cons newchain newstuff)
-                      newstuff)))))))
+(define (newstuff+newchains left right-parts x xs h maxlen simple-chains exit)
+  (let loop ((ns right-parts)
+             (newstuff '()))
+    (if (null? ns)
+        newstuff
+        (let* ((newchain  (append left
+                                  (list '|[|)
+                                  (car ns)
+                                  (list '|]|) xs))
+               (com (drop-nt newchain)))
+          (set-for-each
+           simple-chains
+           (lambda (s)
+             (match-let* (((list x y z) s)
+                          (confl (conflictual com 
+                                              x y z h)))
+                         (when (pair? confl)
+                           (show-conflicts (list (list s com)))
+                           (exit #t))))) ;; conflict found: abort
+          (loop (cdr ns)
+                (if (<= (length com)
+                        maxlen)
+                    (cons newchain newstuff)
+                    newstuff))))))
     
 
 (define (show-chains the-set)
@@ -314,8 +320,7 @@
 
 
 (define (show-conflicts cf)
-  (displayln "Conflicts:")
-  (for-each (lambda (c)
+   (for-each (lambda (c)
               (match-let (((list (list l c r)
                                  ch) 
                            c))
@@ -329,19 +334,3 @@
                                   (map symbol->string ch)))
                 ))
             cf))
-
-
-(define (find-conflicts the-chains simple-chains h)
-  (let ((out '()))
-    (set-for-each
-     the-chains
-     (lambda (c)
-       (set-for-each
-        simple-chains
-        (lambda (s)
-          (match-let* (((list x y z) s)
-                       (confl (conflictual c x y z h)))
-                      (when (pair? confl)
-                        (set! out (cons (list s c)
-                                        out))))))))
-    out))
