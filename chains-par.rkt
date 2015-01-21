@@ -241,7 +241,7 @@
                                         #f)))))))
 
           (loop (cdr ns)
-                (if (<= (length com)
+                (if (<= (length newchain)
                         maxlen)
                     (cons newchain newstuff)
                     newstuff))))))

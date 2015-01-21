@@ -235,7 +235,7 @@
                            (show-conflicts (list (list s com)))
                            (exit #t))))) ;; conflict found: abort
           (loop (cdr ns)
-                (if (<= (length com)
+                (if (<= (length newchain)
                         maxlen)
                     (cons newchain newstuff)
                     newstuff))))))
