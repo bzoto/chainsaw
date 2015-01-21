@@ -9,9 +9,12 @@
 
 
 
-(grammatical-chains-conflicts
- G1 'E 2 10
- (chains-as-set
-  (chains G1 'E 2 100)))
+(define grammchains (grammatical-chains G1 'E 2 10))
 
 
+(show-chains grammchains)
+
+(show-conflicts
+          (find-conflicts grammchains
+                          (chains-as-set (chains G1 'E 2 100))
+                          2))

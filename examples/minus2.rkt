@@ -10,8 +10,12 @@
 
 
 
+(define grammchains (grammatical-chains G1 'E 3 20))
 
-(grammatical-chains-conflicts
- G1 'E 3 20
- (chains-as-set (chains G1 'E 3 100)))
 
+(show-chains grammchains)
+
+(show-conflicts
+          (find-conflicts grammchains
+                          (chains-as-set (chains G1 'E 3 100))
+                          3))
