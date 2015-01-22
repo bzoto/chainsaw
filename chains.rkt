@@ -12,6 +12,7 @@
  chains-as-set
  show-chains
  find-conflicts
+ find-conflicts-par
  show-conflicts
  )
 
@@ -345,3 +346,31 @@
                         (set! out (cons (list s c)
                                         out))))))))
     out))
+
+
+(define (set-partition the-set n)
+  (let ((m (/ (set-count the-set) n))
+        (v (make-vector n #f)))
+    (for ((x v)
+          (i (in-naturals)))
+      (vector-set! v i (mutable-set)))
+    (let ((part 0)
+          (curr 0))
+      (set-for-each the-set
+                    (lambda (s)
+                      (set-add! (vector-ref v part) s)
+                      (set! curr (+ 1 curr))
+                      (when (= curr m)
+                        (set! curr 0)
+                        (set! part (+ 1 part))))))
+    v))
+
+(define (find-conflicts-par the-chains simple-chains h num-proc)
+  (let ((schains (set-partition simple-chains num-proc)))
+    (for ((x (vector-map
+              (lambda (sc)
+                (future (lambda ()
+                          (find-conflicts the-chains sc h))))
+              schains)))
+      
+      (show-conflicts (touch x)))))

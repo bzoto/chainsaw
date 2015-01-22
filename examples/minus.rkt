@@ -14,7 +14,9 @@
 
 (show-chains grammchains)
 
-(show-conflicts
-          (find-conflicts grammchains
+;(show-conflicts
+          (find-conflicts-par grammchains
                           (chains-as-set (chains G1 'E 2 100))
-                          2))
+                          2
+                          2)
+;)
