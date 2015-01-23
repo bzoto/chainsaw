@@ -12,9 +12,8 @@
  chains-as-set
  show-chains
  find-conflicts
- find-conflicts-par
- find-conflicts-par-chan
  show-conflicts
+ parallel-find+show-conflicts
  )
 
 ;; --- interface ---
@@ -333,6 +332,7 @@
             cf))
 
 (define (find-conflicts the-chains simple-chains h)
+  "returns the list of conflicts between the-chains and simple-chains"
   (let ((out '()))
     (set-for-each
      the-chains
@@ -345,10 +345,12 @@
                       (when (pair? confl)
                         (set! out (cons (list s c)
                                         out))))))))
-    out))
+    out
+    ))
 
 
 (define (set-partition the-set n)
+  "partitions a set in n subsets"
   (let ((m (floor (/ (set-count the-set) n)))
         (v (make-vector n #f)))
     (for ((i (in-range 0 n)))
@@ -366,10 +368,10 @@
                         (set! part (+ 1 part))))))
     v))
 
-(define (find-conflicts-par-chan the-chains simple-chains h . proc)
+(define (parallel-find+show-conflicts the-chains simple-chains h . proc)
   (let ((num-proc 
          (if (null? proc)
-             (floor (/ (processor-count) 2))
+             (processor-count)
              (car proc))))
     (let ((schains (set-partition simple-chains num-proc))
           (places  (for/vector ((x (in-range 0 num-proc)))
@@ -386,6 +388,7 @@
                             (set->list the-chains)
                             (set->list (vector-ref schains x))
                             h)))
+      
       (for ((x (in-range 0 num-proc)))
         (show-conflicts
          (place-channel-get (vector-ref places x)))))))
