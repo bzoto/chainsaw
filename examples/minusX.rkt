@@ -11,12 +11,12 @@
 ;; bound = 4h+m+2|V_N|(2h+m)m = 4+4+4(2+4)4 = 104
 
 
-(define grammchains (grammatical-chains G1 'E 1 25))
+(define grammchains (grammatical-chains G1 'E 1 20))
 
 
 ;(show-chains grammchains)
 
 ;;(show-conflicts (find-conflicts grammchains (chains-as-set (chains G1 'E 1 100)) 1))
 
-(find-conflicts-par grammchains (chains-as-set (chains G1 'E 1 100)) 1 2)
+(find-conflicts-par-chan grammchains (chains-as-set (chains G1 'E 1 100)) 1)
 
