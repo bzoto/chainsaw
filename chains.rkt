@@ -187,7 +187,7 @@
 
 
 
-(define (grammatical-chains G axiom k maxlen)
+(define (grammatical-chains G axiom k maxlen . bound)
   (let ((bord (border k)))
     (let loop ((sfs  '())
                (left '())
@@ -207,7 +207,7 @@
                (if (nonterm? x)
                    (let-values (((newstuff newchains)
                                  (newstuff+newchains left (hash-ref G x)
-                                                     x xs maxlen)))
+                                                     x xs maxlen bound)))
                      (loop (append sfs newstuff)
                            (append left (list x))
                            xs
@@ -217,21 +217,28 @@
                          xs
                          out))))))))
 
-(define (newstuff+newchains left right-parts x xs maxlen)
+(define (newstuff+newchains left right-parts x xs maxlen bound)
   (let ((newchains (mutable-set)))
     (let loop ((ns right-parts)
                (newstuff '()))
       (if (null? ns)
           (values newstuff newchains)
           
-          (let ((newchain  (append left
+          (let* ((newchain  (append left
                                    (list '|[|)
                                    (car ns)
-                                   (list '|]|) xs)))
-            (set-add! newchains (drop-nt newchain))
+                                   (list '|]|) xs))
+                 (nc (drop-nt newchain))
+                 (lnc (length nc)))
+            ;; keep only the longest chains
+            (when (or (null? bound)
+                      (<= (- maxlen (car bound))
+                          lnc
+                          maxlen))
+              (set-add! newchains nc))
+                
             (loop (cdr ns)
-                  (if (<= (length newchain)
-                          maxlen)
+                  (if (<= lnc maxlen)
                       (cons newchain newstuff)
                       newstuff)))))))
     
@@ -373,7 +380,7 @@
          (if (null? proc)
              (processor-count)
              (car proc))))
-    (let ((schains (set-partition simple-chains num-proc))
+    (let ((schains (set-partition the-chains num-proc))
           (places  (for/vector ((x (in-range 0 num-proc)))
                      (place chan
                             (define pars (place-channel-get chan))
@@ -385,8 +392,8 @@
       (for ((x (in-range 0 num-proc)))
         (place-channel-put (vector-ref places  x)
                            (list
-                            (set->list the-chains)
                             (set->list (vector-ref schains x))
+                            (set->list simple-chains)
                             h)))
       
       (for ((x (in-range 0 num-proc)))
