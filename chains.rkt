@@ -188,6 +188,10 @@
 
 
 (define (grammatical-chains G axiom k maxlen . bound)
+  "returns the grammatical chains, starting from the axiom. 
+   maxlen is the maximum length of the considered sentential forms.
+   bound, if present, is used for a lower bound on the set of sentential forms
+   returned." 
   (let ((bord (border k)))
     (let loop ((sfs  '())
                (left '())
