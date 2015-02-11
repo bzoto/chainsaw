@@ -14,6 +14,11 @@
  find-conflicts
  show-conflicts
  parallel-find+show-conflicts
+ right-chain-parts
+ left-chain-parts
+ condition-A+B
+ condition-D
+ sufficient-conditions
  )
 
 ;; --- interface ---
@@ -404,3 +409,105 @@
         (show-conflicts
          (place-channel-get (vector-ref places x)))))))
 
+
+;; --- Danger! Sufficient conditions area ---
+
+(define (2-factors lst)
+  (let ((out '())
+        (n (length lst)))
+    (let outer ((i 1))
+      (when (< i n)
+        (let-values (((a b) (split-at lst i)))
+          (set! out (cons (list a b) out)))
+        (outer (+ i 1)))
+      out)))
+
+
+(define (side-over? L1 L2 h)
+  (and
+   (>= (length L1) (+ h 1))
+   (>= (length L2) (+ h 1))
+   (or
+    (equal?
+     (take L1 (+ h 1))
+     (take-right L2 (+ h 1)))
+    (equal?
+     (take L2 (+ h 1))
+     (take-right L1 (+ h 1))))))
+  
+
+(define (chains->lists chains)
+  (let ((out (mutable-set)))
+    (set-for-each chains
+                  (lambda (c)
+                    (let ((it (append
+                               (car c)
+                               (cadr c)
+                               (caddr c))))
+                      (set-add! out it))))
+    out))
+
+(define (right-chain-parts chains)
+  (let ((out (mutable-set)))
+    (set-for-each chains
+                  (lambda (c)
+                    (let ((it (append
+                               (cadr c)
+                               (caddr c))))
+                      (if (set-member? out it)
+                          (begin
+                            (display "Multiple r-factors conflict: ")
+                            (displayln it))
+                          (set-add! out it)))))
+    out))
+
+(define (left-chain-parts chains)
+  (let ((out (mutable-set)))
+    (set-for-each chains
+                  (lambda (c)
+                    (let ((it (append
+                               (car c)
+                               (cadr c))))
+                      (if (set-member? out it)
+                          (begin
+                            (display "Multiple l-factors conflict: ")
+                            (displayln it))
+                          (set-add! out it)))))
+    out))
+
+(define (condition-A+B r-chs h)
+  (set-for-each r-chs
+                (lambda (c1)
+                  (set-for-each r-chs
+                                (lambda (c2)
+                                  (when
+                                      (and 
+                                       (not (equal? c1 c2))
+                                       (side-over? c1 c2 h))
+                                    (display "(A/B) conflict: ")
+                                    (display c1)(display " VS ")
+                                    (displayln c2)))))))
+
+
+(define (condition-D chains)
+  (let ((the-l (chains->lists chains)))
+    (displayln "C conflicts: ")
+    (set-for-each
+     (set-intersect
+      (list->set
+       (apply append
+              (apply append
+                     (append
+                      (set-map the-l 3-factors)
+                      (set-map the-l 2-factors)))))
+      the-l)
+     (lambda (s) (displayln s)))
+    ))
+
+(define (sufficient-conditions simple-chains)
+  (let* ((a-chain (set-first simple-chains))
+         (h (length (car a-chain))))
+    (displayln "Sufficient conditions conflicts:")
+    (condition-A+B (left-chain-parts simple-chains) h)
+    (condition-A+B (right-chain-parts simple-chains) h)
+    (condition-D simple-chains)))
