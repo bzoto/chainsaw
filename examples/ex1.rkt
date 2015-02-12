@@ -27,10 +27,10 @@
   )
 
 
-;(show-conflicts
-; (find-conflicts grammchains-G1
-;                 simple-chains-G2
-;                 1)) ;; h
+(show-conflicts
+ (find-conflicts grammchains-G1
+                 simple-chains-G2
+                 ))
 
 (sufficient-conditions simple-chains-G2)
 

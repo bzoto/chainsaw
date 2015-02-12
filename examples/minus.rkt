@@ -10,13 +10,14 @@
 
 
 (define grammchains (grammatical-chains G1 'E 2 10))
-
-
 (show-chains grammchains)
+
+(define simple-chains (chains-as-set (chains G1 'E 2 100)))
+
 
 (parallel-find+show-conflicts 
  grammchains
- (chains-as-set (chains G1 'E 2 100))
- 2
- 
+ simple-chains
  )
+
+(sufficient-conditions simple-chains)

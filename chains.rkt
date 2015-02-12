@@ -16,8 +16,6 @@
  parallel-find+show-conflicts
  right-chain-parts
  left-chain-parts
- condition-A+B
- condition-D
  sufficient-conditions
  )
 
@@ -347,9 +345,11 @@
                 ))
             cf))
 
-(define (find-conflicts the-chains simple-chains h)
+(define (find-conflicts the-chains simple-chains)
   "returns the list of conflicts between the-chains and simple-chains"
-  (let ((out '()))
+  (let* ((a-chain (set-first simple-chains))
+         (h (length (car a-chain)))
+         (out '()))
     (set-for-each
      the-chains
      (lambda (c)
@@ -384,11 +384,13 @@
                         (set! part (+ 1 part))))))
     v))
 
-(define (parallel-find+show-conflicts the-chains simple-chains h . proc)
-  (let ((num-proc 
-         (if (null? proc)
-             (processor-count)
-             (car proc))))
+(define (parallel-find+show-conflicts the-chains simple-chains . proc)
+  (let* ((a-chain (set-first simple-chains))
+         (h (length (car a-chain)))
+         (num-proc 
+          (if (null? proc)
+              (processor-count)
+              (car proc))))
     (let ((schains (set-partition the-chains num-proc))
           (places  (for/vector ((x (in-range 0 num-proc)))
                      (place chan
@@ -397,7 +399,7 @@
                               (place-channel-put chan
                                                  (find-conflicts
                                                   (list->set the-chains)
-                                                  (list->set s) h)))))))
+                                                  (list->set s))))))))
       (for ((x (in-range 0 num-proc)))
         (place-channel-put (vector-ref places  x)
                            (list
@@ -475,7 +477,7 @@
                           (set-add! out it)))))
     out))
 
-(define (condition-A+B r-chs h)
+(define (conditions-A+B r-chs h)
   (set-for-each r-chs
                 (lambda (c1)
                   (set-for-each r-chs
@@ -489,7 +491,7 @@
                                     (displayln c2)))))))
 
 
-(define (condition-D chains)
+(define (condition-C chains)
   (let ((the-l (chains->lists chains)))
     (displayln "C conflicts: ")
     (set-for-each
@@ -508,6 +510,6 @@
   (let* ((a-chain (set-first simple-chains))
          (h (length (car a-chain))))
     (displayln "Sufficient conditions conflicts:")
-    (condition-A+B (left-chain-parts simple-chains) h)
-    (condition-A+B (right-chain-parts simple-chains) h)
-    (condition-D simple-chains)))
+    (conditions-A+B (left-chain-parts simple-chains) h)
+    (conditions-A+B (right-chain-parts simple-chains) h)
+    (condition-C simple-chains)))
