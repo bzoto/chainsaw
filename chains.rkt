@@ -108,7 +108,12 @@
                (cnt  0))
       (if (or (null? sfs)(= steps cnt))
           ctxs
-          (let ((x  (filter (lambda (t) (not (terminal-sf? t)))
+          (let ((x  (filter (lambda (t) 
+                              (define r (terminal-sf? t))
+                              (when r
+                                (show-list-as-string t)
+                                (newline))
+                              (not r))
                             (apply-rules (car sfs) G)))
                 (xs (cdr sfs)))
             (for-each (lambda (c)
@@ -139,6 +144,7 @@
 
 
 (define (chains G axiom k steps) ;; these are the simple chains
+  (displayln "Examples strings:")
   (let* ((contexts (get-contexts G axiom k steps))
          (nts      (hash-keys contexts))
          (bodys    (make-hash))
