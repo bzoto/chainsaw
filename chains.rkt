@@ -265,10 +265,10 @@
       (when (< i n)
         (let inner ((j (+ 1 i)))
           (when (<= j n)
-            (let-values (((a b) (split-at lst i)))
-              (let-values (((c d) (split-at b (- j i))))
-                (set! out (cons (list a c d) out))
-                (inner (+ j 1))))))
+            (define-values (a b) (split-at lst i))
+            (define-values (c d) (split-at b (- j i)))
+            (set! out (cons (list a c d) out))
+            (inner (+ j 1))))
         (outer (+ i 1))))
     out))
 
@@ -293,10 +293,13 @@
 (define (is-bracketed? lst y)
   (let loop ((cur   lst)
              (the-y y)
-             (state 0))
+             (state -1))
     (cond
       ((null? cur)
        (= state 2))
+      ((and (eq? '|[| (car cur))
+            (= -1 state))
+       (loop (cdr cur) the-y 0))
       ((and (eq? '|[| (car cur))
             (= 0 state))
        (loop (cdr cur) the-y 0))
@@ -401,7 +404,7 @@
                                                   (list->set the-chains)
                                                   (list->set s))))))))
       (for ((x (in-range 0 num-proc)))
-        (place-channel-put (vector-ref places  x)
+        (place-channel-put (vector-ref places x)
                            (list
                             (set->list (vector-ref schains x))
                             (set->list simple-chains)
@@ -439,72 +442,65 @@
   
 
 (define (chains->lists chains)
-  (let ((out (mutable-set)))
-    (set-for-each chains
-                  (lambda (c)
-                    (let ((it (append
-                               (car c)
-                               (cadr c)
-                               (caddr c))))
-                      (set-add! out it))))
-    out))
+  (define out (mutable-set))
+  (for ((c chains))
+    (let ((it (append
+               (car c)
+               (cadr c)
+               (caddr c))))
+      (set-add! out it)))
+  out)
 
 (define (right-chain-parts chains)
-  (let ((out (mutable-set)))
-    (set-for-each chains
-                  (lambda (c)
-                    (let ((it (append
-                               (cadr c)
-                               (caddr c))))
-                      (if (set-member? out it)
-                          (begin
-                            (display "Multiple r-factors conflict: ")
-                            (displayln it))
-                          (set-add! out it)))))
-    out))
+  (define out (mutable-set))
+  (for ((c chains))
+    (let ((it (append
+               (cadr c)
+               (caddr c))))
+      (if (set-member? out it)
+          (begin
+            (display "Multiple r-factors conflict: ")
+            (displayln it))
+          (set-add! out it))))
+  out)
 
 (define (left-chain-parts chains)
-  (let ((out (mutable-set)))
-    (set-for-each chains
-                  (lambda (c)
-                    (let ((it (append
-                               (car c)
-                               (cadr c))))
-                      (if (set-member? out it)
-                          (begin
-                            (display "Multiple l-factors conflict: ")
-                            (displayln it))
-                          (set-add! out it)))))
-    out))
+  (define out (mutable-set))
+  (for ((c chains))
+    (define it (append (car c)(cadr c)))
+    (if (set-member? out it)
+        (begin
+          (display "Multiple l-factors conflict: ")
+          (displayln it))
+        (set-add! out it)))
+  out)
 
 (define (conditions-A+B r-chs h)
-  (set-for-each r-chs
-                (lambda (c1)
-                  (set-for-each r-chs
-                                (lambda (c2)
-                                  (when
-                                      (and 
-                                       (not (equal? c1 c2))
-                                       (side-over? c1 c2 h))
-                                    (display "(A/B) conflict: ")
-                                    (display c1)(display " VS ")
-                                    (displayln c2)))))))
+  (for* ((c1 r-chs)
+         (c2 r-chs))
+    (when
+        (and 
+         (not (equal? c1 c2))
+         (side-over? c1 c2 h))
+      (display "(A/B) conflict: ")
+      (display c1)(display " VS ")
+      (displayln c2))))
 
 
 (define (condition-C chains)
-  (let ((the-l (chains->lists chains)))
-    (displayln "C conflicts: ")
-    (set-for-each
-     (set-intersect
-      (list->set
-       (apply append
-              (apply append
-                     (append
-                      (set-map the-l 3-factors)
-                      (set-map the-l 2-factors)))))
-      the-l)
-     (lambda (s) (displayln s)))
-    ))
+  (define the-l (chains->lists chains))
+  (displayln "C conflicts: ")
+  (set-for-each
+   (set-intersect
+    (list->set
+     (apply append
+            (apply append
+                   (append
+                    (set-map the-l 3-factors)
+                    (set-map the-l 2-factors)))))
+    the-l)
+   (lambda (s) (displayln s)))
+  )
 
 (define (sufficient-conditions simple-chains)
   (let* ((a-chain (set-first simple-chains))
