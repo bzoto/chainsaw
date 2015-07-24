@@ -35,9 +35,9 @@
              '(E T)))
 
 
-(define grammchains (grammatical-chains G5 'E 1 6))
+(define grammchains (grammatical-chains G5 'E 2 6))
 (show-chains grammchains)
-(define simple-chains (chains-as-set (chains G5 'E 1 100)))
+(define simple-chains (chains-as-set (chains G5 'E 2 100)))
 
 
 (time

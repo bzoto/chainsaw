@@ -23,7 +23,7 @@
                       (x a x -a))))
              '(E T)))
  (define G2 (build-grammar
-             '((S -> ((E) (a T) (- a T)))
+             '(;(S -> ((E) (a T) (- a T)))
                (E -> ((E - - a T)
                       (E - a T)
                       (E - a) 
@@ -38,14 +38,14 @@
                       (x - a)
                       (x a)
                       )))
-             '(E T S)))                     
+             '(E T)))                     
                    
                  
 (define H 1)
 
-(define grammchains (grammatical-chains G2 'S H 26 5))
+(define grammchains (grammatical-chains G2 'E H 9))
 (show-chains grammchains)
-(define simple-chains (chains-as-set (chains G2 'S H 100)))
+(define simple-chains (chains-as-set (chains G2 'E H 100)))
 
 
 (time

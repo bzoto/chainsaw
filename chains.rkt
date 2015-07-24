@@ -5,8 +5,8 @@
 
 #lang racket
 
-(provide 
- chains 
+(provide
+ chains
  build-grammar
  grammatical-chains
  chains-as-set
@@ -25,10 +25,10 @@
   "gr is a list of rules like (S -> (a S b) (c)), nt are the nonterminals"
   (let ((G (make-hash)))
     (for-each (lambda (r)
-                (hash-set! G 
+                (hash-set! G
                            (nonterm (car r)) ; the nonterminal
-                           (map (lambda (t) 
-                                  (map (lambda (u) 
+                           (map (lambda (t)
+                                  (map (lambda (u)
                                          (if (member u nt)
                                              (nonterm u)
                                              u))
@@ -67,10 +67,10 @@
     (when (nonterm? x)
       (let ((left  (before-k sf i k))
             (right (after-k sf i k)))
-        (when (and 
-               (terminal-sf? left)    
+        (when (and
+               (terminal-sf? left)
                (terminal-sf? right))
-          (set! res 
+          (set! res
                 (cons (list left x right)
                       res)))))
     (if (null? L)
@@ -89,8 +89,8 @@
         (let ((x   (car right))
               (xs  (cdr right)))
           (loop (if (nonterm? x)
-                    (append (map (lambda (f) (append left f xs)) 
-                                 (hash-ref G x)) 
+                    (append (map (lambda (f) (append left f xs))
+                                 (hash-ref G x))
                             out)
                     out)
                 (append left (list x))
@@ -108,7 +108,7 @@
                (cnt  0))
       (if (or (null? sfs)(= steps cnt))
           ctxs
-          (let ((x  (filter (lambda (t) 
+          (let ((x  (filter (lambda (t)
                               (define r (terminal-sf? t))
                               (when r
                                 (show-list-as-string t)
@@ -144,25 +144,25 @@
 
 
 (define (chains G axiom k steps) ;; these are the simple chains
-  (displayln "Examples strings:")
+  (displayln "Example strings:")
   (let* ((contexts (get-contexts G axiom k steps))
          (nts      (hash-keys contexts))
          (bodys    (make-hash))
          (the-chains (make-hash)))
-    
+
     (for-each (lambda (n)
                 (let ((bd (filter (lambda (x)
                                     (not (null? x)))
                                   (map drop-nt (hash-ref G n)))))
-                  (hash-set! bodys n (list->set bd)))) 
+                  (hash-set! bodys n (list->set bd))))
               nts)
-    
+
     (for-each (lambda (n)
                 (set-for-each (hash-ref contexts n)
                               (lambda (c)
                                 (let ((old (hash-ref the-chains c (set))))
-                                  (hash-set! the-chains 
-                                             c 
+                                  (hash-set! the-chains
+                                             c
                                              (set-union old (hash-ref bodys n)))))
                               )
                 )
@@ -176,7 +176,7 @@
                      (display "]")
                      (show-list-as-string (cadr k))
                      (newline)))
-    
+
     the-chains
     ))
 
@@ -197,7 +197,7 @@
 
 
 (define (grammatical-chains G axiom k maxlen . bound)
-  "returns the grammatical chains, starting from the axiom. 
+  "returns the grammatical chains, starting from the axiom.
    maxlen is the maximum length of the considered sentential forms.
    bound, if present, is used for a lower bound on the set of sentential forms
    returned." 
@@ -236,7 +236,7 @@
                (newstuff '()))
       (if (null? ns)
           (values newstuff newchains)
-          
+
           (let* ((newchain  (append left
                                    (list '|[|)
                                    (car ns)
@@ -249,17 +249,17 @@
                           lnc
                           maxlen))
               (set-add! newchains nc))
-                
+
             (loop (cdr ns)
                   (if (<= lnc maxlen)
                       (cons newchain newstuff)
                       newstuff)))))))
-    
+
 
 (define (show-chains the-set)
   (set-for-each the-set
                 (lambda (s)
-                  (displayln (apply string-append 
+                  (displayln (apply string-append
                                     (map symbol->string s))))))
 
 
@@ -333,7 +333,7 @@
           (not (is-bracketed? Y y))
           (not (member (last X) '(|[| |]|)))
           (not (member (car Z)  '(|[| |]|)))
-          )))   
+          )))
      cc)))
 
 
@@ -341,7 +341,7 @@
   (displayln "Conflicts:")
   (for-each (lambda (c)
               (match-let (((list (list l c r)
-                                 ch) 
+                                 ch)
                            c))
                 (show-list-as-string l)
                 (display "[")
@@ -349,7 +349,7 @@
                 (display "]")
                 (show-list-as-string r)
                 (display " VS ")
-                (displayln (apply string-append 
+                (displayln (apply string-append
                                   (map symbol->string ch)))
                 ))
             cf))
@@ -415,7 +415,7 @@
                             (set->list (vector-ref schains x))
                             (set->list simple-chains)
                             h)))
-      
+
       (for ((x (in-range 0 num-proc)))
         (show-conflicts
          (place-channel-get (vector-ref places x)))))))
@@ -445,7 +445,7 @@
     (equal?
      (take L2 (+ h 1))
      (take-right L1 (+ h 1))))))
-  
+
 
 (define (chains->lists chains)
   (define out (mutable-set))
