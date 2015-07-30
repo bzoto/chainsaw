@@ -17,12 +17,13 @@
  right-chain-parts
  left-chain-parts
  sufficient-conditions
+ maxg
  )
 
 ;; --- interface ---
 
 (define (build-grammar gr nt)
-  "gr is a list of rules like (S -> (a S b) (c)), nt are the nonterminals"
+  "gr is a list of rules like (S -> ((a S b) (c))), nt are the nonterminals"
   (let ((G (make-hash)))
     (for-each (lambda (r)
                 (hash-set! G
@@ -180,6 +181,7 @@
     the-chains
     ))
 
+
 (define (chains-as-set chains-hash)
   (let ((out (mutable-set)))
     (hash-for-each chains-hash
@@ -192,6 +194,151 @@
                                                 (list body)
                                                 (list (cadr k))))))))
     out))
+
+
+(define (iterated-p-car list-of-lists)
+  "iterated cartesian product"
+  (define (foldl1 fun lst)
+    (foldl fun (car lst) (cdr lst)))
+
+  (foldl1 (lambda (X Y)
+	    (for*/list ((x X)
+			(y Y))
+	      (cond
+	       ((and (list? x)(list? y))
+		(append y x))
+	       ((list? y) 
+		(append y (list x)))
+	       ((list? x)
+		(append (list y) x))
+	       (else
+		(append (list y)(list x))))))
+	  list-of-lists))
+
+
+(define (max-ntcontext max-nt)
+  (list (car max-nt) (last max-nt)))
+
+(define (max-ntbody max-nt)
+  (for/list ((n (cdr max-nt))
+             (i (range 2 (length max-nt))))
+    n))
+
+(define (compatible-max-nt context max-nt)
+  (let* ((ffun (cond
+                ((equal? context (list '--everything-- '--everything--))
+                 (lambda (x) #t))
+                ((equal? (car context) '--everything--)
+                 (lambda (x) (equal? (last x)(cadr context))))
+                ((equal? (cadr context) '--everything--)
+                 (lambda (x) (equal? (car x)(car context))))
+                (else (lambda (x) (equal? (max-ntcontext x) context)))
+                ))
+         (compat (filter ffun
+                         (set->list max-nt))))
+    (map (lambda (x) (list (nonterm x))) compat)))
+
+(define (rpart->stencils rpart nt-max)
+  (let loop ((cur  (car rpart))
+             (rest (append (cdr rpart) (list '--everything--)))
+             (new  '())
+             (prev '--everything--))
+    (if (pair? rest)
+        (loop (car rest)
+              (cdr rest)
+              (append new
+                      (if (nonterm? cur)
+                          (list (compatible-max-nt (list prev (car rest)) nt-max))
+                          (list (list cur))))
+              cur)
+        new)))
+
+
+(define (maxg G axiom steps)
+  (displayln "Example strings:")
+  (let* ((contexts (get-contexts G axiom 1 steps))
+         (nts      (hash-keys contexts))
+         (ctxs     (mutable-set))
+         (bdxs     (mutable-set))
+         (bodys    (make-hash))
+         (rparts   (mutable-set))
+         (rparts1  (mutable-set))
+         (nt-max   (mutable-set))
+         (rul-max  (make-hash))
+         )
+
+    (for-each (lambda (n) ; compute all the bodys
+                (let ((bd (filter (lambda (x)
+                                    (not (null? x)))
+                                  (map drop-nt (hash-ref G n)))))
+                  (hash-set! bodys n (list->set bd))))
+              nts)
+
+    ;; (for-each (lambda (n) ; nonterminals and rparts (stricter version)
+    ;;             (let ((cc  (hash-ref contexts n))
+    ;;                   (bds (hash-ref bodys n)))
+
+    ;;               (for-each (lambda (p)
+    ;;                           (set-add! rparts p))
+    ;;                         (hash-ref G n))
+
+    ;;               (for* ((c cc)
+    ;;                      (b bds))
+    ;;                 (set-add! nt-max (append (car c) b (cadr c))))))
+    ;;           nts)
+
+    ;; nonterminals and rparts
+    (for-each (lambda (n) 
+                (let ((cc  (hash-ref contexts n))
+                      (bds (hash-ref bodys n)))
+
+                  (set-union! bdxs bds)
+                  (set-union! ctxs cc)
+
+                  (for-each (lambda (p)
+                              (set-add! rparts p))
+                            (hash-ref G n))
+
+                  ))
+              nts)
+    (for* ((c ctxs) ;; nonterminals (looser version)
+           (b bdxs))
+      (set-add! nt-max (append (car c) b (cadr c))))
+
+    (set-for-each rparts (lambda (r)
+                           (set-union! rparts1
+                                       (list->set (iterated-p-car
+                                                   (rpart->stencils r nt-max))))))
+
+    (for* ((p rparts1)
+           (n nt-max)
+           #:when (equal? (max-ntbody n)
+                          (filter (lambda (x) (not (nonterm? x))) p)
+                          ))
+      (let ((old (hash-ref rul-max (nonterm n) (set))))
+        (hash-set! rul-max (nonterm n) (set-union old (set p)))
+        ))
+
+    (hash-for-each rul-max (lambda (n p)
+                             (hash-set! rul-max n (set->list p))))
+
+    (hash-set! rul-max (nonterm axiom)
+               (list
+                (for/list ((n nt-max)
+                           #:when (equal? (max-ntcontext n) (list '|#| '|#|)))
+                  (nonterm n))))
+
+    (displayln "Max-grammar:")
+    (hash-for-each rul-max
+                   (lambda (l r)
+                     (display l) (display " -> ")
+                     (displayln r)(newline)))
+    (displayln "--o-o--")
+
+    rul-max
+    ))
+
+
 
 
 
@@ -214,7 +361,7 @@
                     '()
                     (car sfs)
                     out)
-              (match-let* 
+              (match-let*
                (((cons x xs) right))
 
                (if (nonterm? x)
@@ -255,12 +402,13 @@
                       (cons newchain newstuff)
                       newstuff)))))))
 
-
 (define (show-chains the-set)
   (set-for-each the-set
                 (lambda (s)
                   (displayln (apply string-append
                                     (map symbol->string s))))))
+
+
 
 
 
