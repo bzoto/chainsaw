@@ -196,24 +196,19 @@
     out))
 
 
-(define (iterated-p-car list-of-lists)
-  "iterated cartesian product"
-  (define (foldl1 fun lst)
-    (foldl fun (car lst) (cdr lst)))
 
-  (foldl1 (lambda (X Y)
-	    (for*/list ((x X)
-			(y Y))
-	      (cond
-	       ((and (list? x)(list? y))
-		(append y x))
-	       ((list? y) 
-		(append y (list x)))
-	       ((list? x)
-		(append (list y) x))
-	       (else
-		(append (list y)(list x))))))
-	  list-of-lists))
+
+(define (iterated-p-car list-of-lists)
+  (foldr (lambda (X Y)
+           (let ((res '()))
+             (for-each (lambda (x)
+                         (for-each (lambda (y)
+                                     (set! res
+                                           (append res (list (cons x y)))))
+                                   Y))
+                       X)
+             res))
+         '(()) list-of-lists))
 
 
 (define (max-ntcontext max-nt)
@@ -305,11 +300,16 @@
            (b bdxs))
       (set-add! nt-max (append (car c) b (cadr c))))
 
+
     (set-for-each rparts (lambda (r)
                            (set-union! rparts1
                                        (list->set (iterated-p-car
                                                    (rpart->stencils r nt-max))))))
+    ;; basic rules are like: a<bc>d -> bc
+    (for ((n nt-max))
+      (hash-set! rul-max (nonterm n) (set (max-ntbody n))))
 
+    ;; rules from right parts
     (for* ((p rparts1)
            (n nt-max)
            #:when (equal? (max-ntbody n)
@@ -328,12 +328,13 @@
                            #:when (equal? (max-ntcontext n) (list '|#| '|#|)))
                   (nonterm n))))
 
+    (displayln "      --o-o--")
     (displayln "Max-grammar:")
     (hash-for-each rul-max
                    (lambda (l r)
                      (display l) (display " -> ")
                      (displayln r)(newline)))
-    (displayln "--o-o--")
+    (displayln "      --o-o--")
 
     rul-max
     ))

@@ -38,13 +38,18 @@
                       (x - a)
                       (x a)
                       )))
-             '(E T)))                     
-                   
-                 
+             '(E T)))
+
+
 (define H 1)
 
+(define max (maxg G2 'E 100))
 (define grammchains (grammatical-chains G2 'E H 9))
 (show-chains grammchains)
+(displayln " -XXXXXXXXXX-")
+(define mgrammchains (grammatical-chains max 'E H 9))
+(show-chains mgrammchains)
+
 (define simple-chains (chains-as-set (chains G2 'E H 100)))
 
 
