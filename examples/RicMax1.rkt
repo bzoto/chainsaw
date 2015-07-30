@@ -29,15 +29,15 @@
 
 (define H 1)
 
-(define max (maxg G1 'S 100))
-(define grammchains (grammatical-chains G1 'S H 15 ))
+(define max (maxg G2 'S 100))
+(define grammchains (grammatical-chains G2 'S H 15 ))
 (show-chains grammchains)
 (displayln "-------")
 (define grammchains-max (grammatical-chains max 'S H 15 ))
 (show-chains grammchains-max)
 
-;(show-conflicts
-;          (find-conflicts grammchains
-;                          (chains-as-set (chains G3 'S H 100))
-;                          ))
+(show-conflicts
+          (find-conflicts grammchains-max
+                          (chains-as-set (chains max 'S H 100))
+                          ))
 

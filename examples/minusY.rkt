@@ -51,6 +51,7 @@
 (show-chains mgrammchains)
 
 (define simple-chains (chains-as-set (chains G2 'E H 100)))
+(define msimple-chains (chains-as-set (chains max 'E H 100)))
 
 
 (time
@@ -61,6 +62,7 @@
 
 )
 
+(parallel-find+show-conflicts mgrammchains msimple-chains)
 
 
 ;(sufficient-conditions simple-chains)
