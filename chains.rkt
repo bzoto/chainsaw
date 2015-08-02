@@ -46,6 +46,8 @@
   #:transparent)       ;; for equality
 
 
+
+
 (define (terminal-sf? sf)
   (andmap (lambda (s)
             (not (nonterm? s))) sf))
@@ -282,7 +284,7 @@
                     (set-add! nt-max (append (car c) b (cadr c))))))
               nts)
 
-    ;; nonterminals and rparts
+    ;; nonterminals and rparts (loose version)
     ;; (for-each (lambda (n) 
     ;;             (let ((cc  (hash-ref contexts n))
     ;;                   (bds (hash-ref bodys n)))
@@ -301,6 +303,7 @@
     ;;   (set-add! nt-max (append (car c) b (cadr c))))
 
 
+    ;; compute maxgrammar right parts from right parts
     (set-for-each rparts (lambda (r)
                            (set-union! rparts1
                                        (list->set (iterated-p-car
@@ -309,7 +312,7 @@
     (for ((n nt-max))
       (hash-set! rul-max (nonterm n) (set (max-ntbody n))))
 
-    ;; rules from right parts
+    ;; compute rules from maxgrammar right parts
     (for* ((p rparts1)
            (n nt-max)
            #:when (equal? (max-ntbody n)
@@ -330,16 +333,36 @@
 
     (displayln "      --o-o--")
     (displayln "Max-grammar:")
-    (hash-for-each rul-max
-                   (lambda (l r)
-                     (display l) (display " -> ")
-                     (displayln r)(newline)))
+    (show-grammar rul-max)
     (displayln "      --o-o--")
 
     rul-max
     ))
 
+(define (show-struct x)
+  (if (nonterm? x)
+      (nonterm-symb x)
+      x))
 
+(define (show-list-of-lists L)
+  (if (= 1 (length (car L)))
+      (begin
+        (displayln (car L))(newline))
+      (begin
+        (newline)
+        (for-each (lambda (t)
+                    (display "    ")
+                    (displayln t)) L)
+        (newline))))
+
+(define (show-grammar G)
+  (hash-for-each G
+                 (lambda (l r)
+                   (display (show-struct l))
+                   (display " -> ")
+                   (show-list-of-lists (map (lambda (x)
+                                              (map show-struct x)) r))
+                   )))
 
 
 
