@@ -315,9 +315,10 @@
     ;; compute rules from maxgrammar right parts
     (for* ((p rparts1)
            (n nt-max)
-           #:when (equal? (max-ntbody n)
-                          (filter (lambda (x) (not (nonterm? x))) p)
-                          ))
+           #:when (and (equal? (max-ntbody n)
+                          (filter (lambda (x) (not (nonterm? x))) p))
+                          (check-first+last-nt n p))
+                          )
       (let ((old (hash-ref rul-max (nonterm n) (set))))
         (hash-set! rul-max (nonterm n) (set-union old (set p)))
         ))
@@ -338,6 +339,26 @@
 
     rul-max
     ))
+
+(define (check-first+last-nt nonterm right-part)
+  (define l (car right-part))
+  (define r (last right-part))
+  (define lnts (if (nonterm? l)
+                   (car (nonterm-symb l))
+                   #f))
+  (define rnts (if (nonterm? r)
+                   (last (nonterm-symb r))
+                   #f))
+  (define flag #t)
+  (when
+      lnts
+    (set! flag (equal? (car nonterm) lnts)))
+  (when
+      rnts
+    (set! flag (and flag (equal? (last nonterm) rnts))))
+  flag)
+
+
 
 (define (show-struct x)
   (if (nonterm? x)
@@ -371,9 +392,9 @@
   "returns the grammatical chains, starting from the axiom.
    maxlen is the maximum length of the considered sentential forms.
    bound, if present, is used for a lower bound on the set of sentential forms
-   returned." 
+   returned."
   (let ((bord (border k)))
-    (let loop ((sfs  '())
+    (let back ((sfs  '())
                (left '())
                (right (append bord (list (nonterm axiom)) bord))
                (out (set)))
@@ -381,7 +402,7 @@
                (null? right))
           out
           (if (null? right)
-              (loop (cdr sfs)
+              (back (cdr sfs)
                     '()
                     (car sfs)
                     out)
@@ -392,18 +413,18 @@
                    (let-values (((newstuff newchains)
                                  (newstuff+newchains left (hash-ref G x)
                                                      x xs maxlen bound)))
-                     (loop (append sfs newstuff)
+                     (back (append sfs newstuff)
                            (append left (list x))
                            xs
                            (set-union out newchains)))
-                   (loop sfs
+                   (back sfs
                          (append left (list x))
                          xs
                          out))))))))
 
 (define (newstuff+newchains left right-parts x xs maxlen bound)
   (let ((newchains (mutable-set)))
-    (let loop ((ns right-parts)
+    (let here ((ns right-parts)
                (newstuff '()))
       (if (null? ns)
           (values newstuff newchains)
@@ -421,7 +442,7 @@
                           maxlen))
               (set-add! newchains nc))
 
-            (loop (cdr ns)
+            (here (cdr ns)
                   (if (<= lnc maxlen)
                       (cons newchain newstuff)
                       newstuff)))))))
