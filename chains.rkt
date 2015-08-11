@@ -350,11 +350,9 @@
                    (last (nonterm-symb r))
                    #f))
   (define flag #t)
-  (when
-      lnts
+  (when lnts
     (set! flag (equal? (car nonterm) lnts)))
-  (when
-      rnts
+  (when rnts
     (set! flag (and flag (equal? (last nonterm) rnts))))
   flag)
 
@@ -366,15 +364,11 @@
       x))
 
 (define (show-list-of-lists L)
-  (if (= 1 (length (car L)))
-      (begin
-        (displayln (car L))(newline))
-      (begin
-        (newline)
-        (for-each (lambda (t)
-                    (display "    ")
-                    (displayln t)) L)
-        (newline))))
+  (newline)
+  (for-each (lambda (t)
+              (display "    ")
+              (displayln t)) L)
+  (newline))
 
 (define (show-grammar G)
   (hash-for-each G
