@@ -6,9 +6,11 @@
 #lang racket
 
 (provide
- chains
  build-grammar
- grammatical-chains
+ compute-chains 
+ compute-xchains
+ chains              ; obsolete
+ grammatical-chains  ; obsolete
  chains-as-set
  show-chains
  find-conflicts
@@ -18,6 +20,7 @@
  left-chain-parts
  sufficient-conditions
  maxg
+ set-the-bound
  )
 
 ;; --- interface ---
@@ -45,6 +48,9 @@
 (struct nonterm (symb) ;; data structure for nonterminals
   #:transparent)       ;; for equality
 
+(define *the-h* 1)
+(define (set-the-bound v)
+  (set! *the-h* v))
 
 
 
@@ -145,6 +151,10 @@
               (cdr lst-of-lst))
     (show-list-as-string (car lst-of-lst))))
 
+
+(define (compute-chains G axiom steps)
+  "new interface of chains"
+  (chains-as-set (chains G axiom *the-h* steps)))
 
 (define (chains G axiom k steps) ;; these are the simple chains
   (displayln "Example strings:")
@@ -349,13 +359,8 @@
   (define rnts (if (nonterm? r)
                    (last (nonterm-symb r))
                    #f))
-  (define flag #t)
-  (when lnts
-    (set! flag (equal? (car nonterm) lnts)))
-  (when rnts
-    (set! flag (and flag (equal? (last nonterm) rnts))))
-  flag)
-
+  (and (implies lnts (equal? (car nonterm) lnts))
+       (implies rnts (equal? (last nonterm) rnts))))
 
 
 (define (show-struct x)
@@ -381,6 +386,15 @@
 
 
 
+
+
+(define (compute-xchains G axiom maxlen . bound)
+  "new interface of grammatical-chains"
+  (if (cons? bound)
+    (grammatical-chains G axiom *the-h* maxlen (car bound))
+    (grammatical-chains G axiom *the-h* maxlen)))
+
+  
 
 (define (grammatical-chains G axiom k maxlen . bound)
   "returns the grammatical chains, starting from the axiom.
