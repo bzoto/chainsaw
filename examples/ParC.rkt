@@ -25,14 +25,9 @@
 
 
 
-
-(define H 1)
-
-(define grammchains (grammatical-chains G0Modif 'S H 18 ))
-
-
+(define grammchains (compute-xchains G0Modif 'S 18))
 (show-chains grammchains)
 
-(define simple-chains (chains-as-set (chains G0Modif 'S H 100)))
+(define simple-chains (compute-chains G0Modif 'S 100))
                          
 (parallel-find+show-conflicts grammchains simple-chains)
